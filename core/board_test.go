@@ -25,6 +25,26 @@ func TestNewSudokuFromString(t *testing.T) {
 				"1,2,3,4,5,6,7,8,9",
 		},
 		{
+			name:      "Invalid count of columns",
+			expectErr: true,
+			input: "1,2,3,4,5,6\n" +
+				"1,2,3,4,5,6\n" +
+				"1,2,3,4,5,6\n" +
+				"1,2,3,4,5,6\n" +
+				"1,2,3,4,5,6\n" +
+				"1,2,3,4,5,6\n" +
+				"1,2,3,4,5,6\n" +
+				"1,2,3,4,5,6\n" +
+				"1,2,3,4,5,6",
+		},
+		{
+			name:      "Invalid count of rows",
+			expectErr: true,
+			input: "1,2,3,4,5,6,7,8,9\n" +
+				"1,2,3,4,5,6,7,8,9\n" +
+				"1,2,3,4,5,6,7,8,9",
+		},
+		{
 			name:      "Invalid Character",
 			expectErr: true,
 			input:     "1,2,A,4,5,6,7,8,9...",

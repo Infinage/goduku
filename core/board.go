@@ -2,8 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io"
-	"os"
 	"strings"
 )
 
@@ -17,10 +15,17 @@ func NewSudokuFromString(raw string) (Sudoku, error) {
 	}
 
 	var board Sudoku
+	var validBoard bool
+
+	raw = strings.Trim(raw, "\n")
 	for row, line := range strings.Split(raw, "\n") {
 		for col, cell := range strings.Split(line, ",") {
+			if row == 8 && col == 8 {
+				validBoard = true
+			}
+
 			if row >= 9 || col >= 9 {
-				return board, fmt.Errorf("Only supports 9x9 Sudoku inputs")
+				return board, fmt.Errorf("Only 9x9 Sudoku inputs supported")
 			}
 
 			if cell == "" {
@@ -35,23 +40,11 @@ func NewSudokuFromString(raw string) (Sudoku, error) {
 		}
 	}
 
+	if !validBoard {
+		return board, fmt.Errorf("Only 9x9 Sudoku inputs supported")
+	}
+
 	return board, nil
-}
-
-// Read from a file
-func NewSudokuFromCSV(path string) (Sudoku, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return Sudoku{}, fmt.Errorf("Failed to open sudoku input file %s: %w", path, err)
-	}
-
-	defer f.Close()
-	raw, err := io.ReadAll(f)
-	if err != nil {
-		return Sudoku{}, fmt.Errorf("Error reading file: %w", err)
-	}
-
-	return NewSudokuFromString(string(raw))
 }
 
 // Return board as a csv string
