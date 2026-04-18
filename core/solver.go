@@ -2,23 +2,24 @@ package core
 
 // Solves and exits after first solution
 // Returns back to original state if no solution found
-func backtrack(board *Sudoku, row, col int) bool {
+// shuffle introduces randomness into the order in which entries are attempted
+func backtrack(board *Sudoku, row, col int, shuffle bool) bool {
 	if row >= 9 {
 		return true
 	}
 
 	if col >= 9 {
-		return backtrack(board, row+1, 0)
+		return backtrack(board, row+1, 0, shuffle)
 	}
 
 	if (*board)[row][col] != 0 {
-		return backtrack(board, row, col+1)
+		return backtrack(board, row, col+1, shuffle)
 	}
 
-	for n := range 9 {
-		(*board)[row][col] = uint8(n + 1)
+	for n := range sequence(1, 9, shuffle) {
+		(*board)[row][col] = n
 		if board.validate(row, col) {
-			if backtrack(board, row, col+1) {
+			if backtrack(board, row, col+1, shuffle) {
 				return true
 			}
 		}
@@ -30,5 +31,5 @@ func backtrack(board *Sudoku, row, col int) bool {
 
 // Solve the sudoku puzzle board, returns true is solved else false
 func (board *Sudoku) Solve() bool {
-	return backtrack(board, 0, 0)
+	return backtrack(board, 0, 0, false)
 }
