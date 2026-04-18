@@ -45,7 +45,17 @@ Commands:
 		fmt.Println("Solving the puzzle")
 	}
 
-	board := core.Sudoku{}
+	board, _ := core.NewSudokuFromString(
+		"1,3,0,0,0,0,0,0,0\n" +
+			"0,0,0,0,0,0,0,0,0\n" +
+			"0,0,0,0,0,0,0,0,0\n" +
+			"0,0,0,0,0,0,0,0,0\n" +
+			"0,0,0,0,0,0,0,0,0\n" +
+			"0,0,0,0,0,0,0,0,0\n" +
+			"0,0,0,0,0,0,0,0,0\n" +
+			"0,0,0,0,0,0,0,0,0\n" +
+			"0,0,0,0,0,0,0,0,0",
+	)
 	if !board.Solve() {
 		fmt.Println("Something is wrong")
 		return

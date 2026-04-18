@@ -31,5 +31,8 @@ func backtrack(board *Sudoku, row, col int, shuffle bool) bool {
 
 // Solve the sudoku puzzle board, returns true is solved else false
 func (board *Sudoku) Solve() bool {
+	if !board.Validate(false) {
+		return false
+	}
 	return backtrack(board, 0, 0, false)
 }
