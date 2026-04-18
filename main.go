@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"goduku/core"
 )
 
 // Command line usage:
@@ -44,22 +43,4 @@ Commands:
 	case "solve":
 		fmt.Println("Solving the puzzle")
 	}
-
-	board, _ := core.NewSudokuFromString(
-		"1,3,0,0,0,0,0,0,0\n" +
-			"0,0,0,0,0,0,0,0,0\n" +
-			"0,0,0,0,0,0,0,0,0\n" +
-			"0,0,0,0,0,0,0,0,0\n" +
-			"0,0,0,0,0,0,0,0,0\n" +
-			"0,0,0,0,0,0,0,0,0\n" +
-			"0,0,0,0,0,0,0,0,0\n" +
-			"0,0,0,0,0,0,0,0,0\n" +
-			"0,0,0,0,0,0,0,0,0",
-	)
-	if !board.Solve() {
-		fmt.Println("Something is wrong")
-		return
-	}
-
-	fmt.Println(board.String(true))
 }
