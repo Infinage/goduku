@@ -43,7 +43,6 @@ func GenerateSudoku() (Sudoku, error) {
 
 		if len(ctx.solutions) == 2 {
 			board[idx.Row][idx.Col] = prev
-			break
 		}
 	}
 

@@ -56,7 +56,7 @@ Commands:
 // Run as:
 // WEBKIT_DISABLE_COMPOSITING_MODE=1 ./goduku
 func startGUI() {
-	w := webview.New(true)
+	w := webview.New(false)
 	defer w.Destroy()
 	w.SetTitle("Goduku")
 	w.SetSize(480, 320, webview.Hint(webview.HintNone))
@@ -174,7 +174,7 @@ func handleSolve(args []string) {
 	subCmd.Parse(args)
 
 	var filePath string
-	if subCmd.NArg() > 1 {
+	if subCmd.NArg() >= 1 {
 		filePath = subCmd.Arg(0)
 	}
 
@@ -193,7 +193,7 @@ func handleValidate(args []string) {
 	subCmd.Parse(args)
 
 	var filePath string
-	if subCmd.NArg() > 1 {
+	if subCmd.NArg() >= 1 {
 		filePath = subCmd.Arg(0)
 	}
 
