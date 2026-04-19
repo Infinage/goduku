@@ -3,6 +3,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Goduku</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --bg: #121214;
@@ -32,7 +33,7 @@
         }
 
         h1 {
-            /* Fluid typography: scales between 2rem and 3.5rem */
+            margin-top: clamp(5px, 2vh, 20px); 
             font-size: clamp(2rem, 8vw, 3.5rem); 
             font-weight: 900;
             margin-bottom: clamp(15px, 5vh, 30px);
@@ -67,7 +68,7 @@
             border: 4px solid var(--border-thick);
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             gap: var(--grid-gap);
-            touch-action: manipulation; /* Prevents double-tap zoom delay on mobile */
+            touch-action: manipulation;
         }
 
         .cell {
@@ -76,18 +77,18 @@
             padding: 0;
             border: none;
             text-align: center;
-            /* Minimum 16px font prevents iOS from auto-zooming on focus */
             font-size: clamp(16px, 4vw, 22px); 
             outline: none;
             background: var(--surface);
             color: var(--text);
             transition: background 0.1s, box-shadow 0.1s;
             box-sizing: border-box;
-            border-radius: 0; /* Prevents default iOS styling */
+            border-radius: 0;
             -webkit-appearance: none;
         }
 
-        /* Subgrid dividers */
+        .cell.highlight { background: #25252b; }
+
         .cell[data-row="3"], .cell[data-row="6"] { box-shadow: inset 0 3px 0 0 var(--border-thick); }
         .cell[data-col="3"], .cell[data-col="6"] { box-shadow: inset 3px 0 0 0 var(--border-thick); }
         .cell[data-row="3"][data-col="3"], .cell[data-row="3"][data-col="6"],
@@ -120,11 +121,11 @@
             width: 100%;
             max-width: calc(9 * var(--cell-size) + 8px);
             justify-content: center;
-            flex-wrap: wrap; /* Allows buttons to wrap on very small screens */
+            flex-wrap: wrap;
         }
 
         button {
-            flex: 1; /* Buttons share available space */
+            flex: 1;
             min-width: 90px;
             padding: 12px 15px;
             border: 1px solid var(--border-light);
@@ -155,7 +156,7 @@
             position: fixed;
             bottom: 40px;
             left: 50%;
-            transform: translateX(-50%); /* Center toast on all screens */
+            transform: translateX(-50%);
             font-weight: 600;
             z-index: 100;
         }
@@ -169,21 +170,10 @@
         @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 40px; opacity: 1; } }
         @keyframes fadeout { from { bottom: 40px; opacity: 1; } to { bottom: 0; opacity: 0; } }
 
-        /* --- MOBILE ADJUSTMENTS --- */
         @media (max-width: 500px) {
-            :root {
-                /* Calculates cell width based on viewport width minus page padding */
-                --cell-size: calc((100vw - 30px) / 9); 
-            }
-
-            .grid {
-                border-width: 2px; /* Thinner border for small screens */
-            }
-
-            button {
-                padding: 10px 5px;
-                font-size: 0.8rem;
-            }
+            :root { --cell-size: calc((100vw - 30px) / 9); }
+            .grid { border-width: 2px; }
+            button { padding: 10px 5px; font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -210,13 +200,38 @@
             genBtn.disabled = false;
             solveBtn.disabled = false;
         }).catch(err => {
-            console.error("WASM Load Error: Make sure main.wasm and wasm_exec.js are in this folder.", err);
+            console.error("WASM Load Error", err);
         });
 
         const gridContainer = document.getElementById("grid");
         const getCells = () => document.querySelectorAll(".cell");
 
-        // Initialize Grid
+        function clearHighlights() {
+            getCells().forEach(c => c.classList.remove("highlight"));
+        }
+
+        function highlightContext(activeIdx) {
+            clearHighlights();
+            if (activeIdx === null || isNaN(activeIdx)) return;
+
+            const row = Math.floor(activeIdx / 9);
+            const col = activeIdx % 9;
+            const gridRow = Math.floor(row / 3) * 3;
+            const gridCol = Math.floor(col / 3) * 3;
+
+            getCells().forEach((cell, i) => {
+                const r = Math.floor(i / 9);
+                const c = i % 9;
+                const isSameRow = r === row;
+                const isSameCol = c === col;
+                const isSameGrid = (r >= gridRow && r < gridRow + 3 && c >= gridCol && c < gridCol + 3);
+
+                if ((isSameRow || isSameCol || isSameGrid) && i !== activeIdx) {
+                    cell.classList.add("highlight");
+                }
+            });
+        }
+
         for (let i = 0; i < 81; i++) {
             const input = document.createElement("input");
             input.type = "text";
@@ -226,31 +241,30 @@
             input.dataset.row = Math.floor(i / 9);
             input.dataset.col = i % 9;
 
-            input.addEventListener("focus", () => input.select());
+            input.addEventListener("focus", (e) => {
+                input.select();
+                highlightContext(parseInt(e.target.dataset.idx));
+            });
+
+            input.addEventListener("blur", () => clearHighlights());
 
             input.addEventListener("input", (e) => {
                 const val = e.target.value.replace(/[^1-9]/g, "");
                 e.target.value = val.slice(-1);
                 debouncedValidate();
+                setTimeout(() => checkCompletion(), 50);
             });
 
             gridContainer.appendChild(input);
         }
 
-      // Updated Toast Function
-      const showToast = (msg, type = "success") => {
-          const t = document.getElementById("toast");
-          t.innerText = msg;
-          
-          // Reset classes and add 'show' plus the type class
-          t.className = "show";
-          if (type === "error") t.classList.add("error");
-
-          // Clear classes after animation finishes
-          setTimeout(() => {
-              t.className = "";
-          }, 1900);
-      };
+        const showToast = (msg, type = "success") => {
+            const t = document.getElementById("toast");
+            t.innerText = msg;
+            t.className = "show";
+            if (type === "error") t.classList.add("error");
+            setTimeout(() => { t.classList.remove("show", "error"); }, 1900);
+        };
 
         function getCSV() {
             return Array.from(getCells()).map(i => i.value || "0").join(",");
@@ -265,7 +279,7 @@
             getCells().forEach((el, i) => {
                 const v = vals[i];
                 el.value = (v === "0" || v === ".") ? "" : v;
-                el.disabled = (el.value !== ""); // Lock generated numbers
+                el.disabled = (el.value !== "");
             });
             validateBoard();
         }
@@ -285,24 +299,47 @@
                     getCells()[row * 9 + col].classList.add("invalid");
                 });
             }
+            return res;
         }
 
-        // Improved Move Logic
+        function checkCompletion() {
+            const cells = Array.from(getCells());
+            const allFilled = cells.every(c => c.value !== "");
+            if (allFilled) {
+                validateBoard();
+                const hasErrors = document.querySelectorAll(".invalid").length > 0;
+                if (!hasErrors) triggerWin();
+                else {
+                    showToast("Almost there, but some errors remain!", "error");
+                    shake();
+                }
+            }
+        }
+
+        function triggerWin() {
+            showToast("Congrats!", "success");
+            const end = Date.now() + 3000;
+            const colors = ['#4a9eff', '#ffffff'];
+            (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: colors });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: colors });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
         function move(row, col, dr, dc) {
             let r = row, c = col;
             while (true) {
-                r += dr;
-                c += dc;
-                if (r < 0 || r >= 9 || c < 0 || c >= 9) return null;
+                r += dr; c += dc;
+                if (r < 0 || r >= 9 || c < 0 || c >= 9) return getCells()[row * 9 + col];
                 const next = getCells()[r * 9 + c];
                 if (!next.disabled) return next;
             }
         }
 
         function shake() {
-            // Triggers the Shake Animation
             gridContainer.style.animation = "none";
-            gridContainer.offsetHeight; // trigger reflow
+            gridContainer.offsetHeight;
             gridContainer.style.animation = "shake 0.4s";
         }
 
@@ -310,12 +347,14 @@
             const active = document.activeElement;
             const isCell = active && active.classList.contains("cell");
             const key = e.key.toLowerCase();
+            
+            if (!isCell) return;
 
-            if (e.key === "Escape" && isCell) {
-                active.blur();
-                return;
-            }
+            const idx = parseInt(active.dataset.idx);
+            const row = Math.floor(idx / 9);
+            const col = idx % 9;
 
+            if (e.key === "Escape") { active.blur(); clearHighlights(); return; }
             if (e.ctrlKey && key === "c") {
                 e.preventDefault();
                 await navigator.clipboard.writeText(getCSV());
@@ -323,28 +362,21 @@
                 return;
             }
 
-            if (!isCell) return;
-
-            const idx = parseInt(active.dataset.idx);
-            const row = Math.floor(idx / 9);
-            const col = idx % 9;
             let target = null;
-
             if (key === "arrowright" || key === "l") target = move(row, col, 0, 1);
             else if (key === "arrowleft" || key === "h") target = move(row, col, 0, -1);
             else if (key === "arrowdown" || key === "j") target = move(row, col, 1, 0);
             else if (key === "arrowup" || key === "k") target = move(row, col, -1, 0);
-            else if (key === "backspace" || key === "delete") {
-                if (!active.disabled) {
-                    active.value = "";
-                    debouncedValidate();
-                }
-                return;
-            }
 
             if (target) {
                 e.preventDefault();
-                target.focus();
+                if (target !== active) target.focus();
+                return;
+            }
+
+            if (key === "backspace" || key === "delete") {
+                if (!active.disabled) { active.value = ""; debouncedValidate(); }
+                return;
             }
         });
 
@@ -357,7 +389,7 @@
                 showToast("Board Pasted");
             } else {
                 showToast("Invalid board", "error");
-                shake()
+                shake();
             }
         });
 
@@ -369,59 +401,35 @@
 
         solveBtn.onclick = () => {
             if (typeof window.solve !== "function") return;
-            
             const res = window.solve(getCSV());
-            
             if (res.success && res.data) {
-              // Remove everything that isn't a digit (commas, newlines, spaces)
-              const cleanData = res.data.replace(/[^1-9]/g, "");
-              
-              // Turn the string into an array of individual characters
-              const vals = Array.from(cleanData);
-
-              if (vals.length !== 81) {
-                  showToast("Solver returned incomplete data", "error");
-                  return;
-              }
-              
-              getCells().forEach((el, i) => {
-                  if (!el.value) el.value = vals[i];
-              });
-              
-              validateBoard();
-              showToast("Solved!", "success");
+                const vals = Array.from(res.data.replace(/[^1-9]/g, ""));
+                getCells().forEach((el, i) => { if (!el.value) el.value = vals[i]; });
+                validateBoard();
+                showToast("Solved!", "success");
             } else {
-                // This triggers if the WASM returns success: false 
-                // or if the board is mathematically unsolvable
                 showToast(res.error || "Unsolvable Board!", "error");
-                shake()
+                shake();
             }
         };
 
         clearBtn.onclick = () => {
             getCells().forEach(el => {
-              el.classList.remove("invalid");
-              if (!el.disabled && el.value !== "") {
-                el.value = "";
-                el.disabled = false;
-              }
+                el.classList.remove("invalid");
+                if (!el.disabled && el.value !== "") el.value = "";
             });
             showToast("Grid Cleared");
         };
 
-      // Function for a total hard reset (triggered by clicking the logo)
-      function hardReset() {
-          getCells().forEach(el => {
-              el.value = "";
-              el.disabled = false;
-              el.classList.remove("invalid");
-          });
-          validateBoard();
-          showToast("System Hard Reset", "success");
-          
-          // Add a little extra flair - shake the grid on hard reset
-          shake();
-      }
+        function hardReset() {
+            getCells().forEach(el => {
+                el.value = ""; el.disabled = false;
+                el.classList.remove("invalid");
+            });
+            validateBoard();
+            showToast("System Hard Reset", "success");
+            shake();
+        }
     </script>
 </body>
 </html>
