@@ -1,6 +1,8 @@
 // $ cp $(go env GOROOT)/lib/wasm/wasm_exec.js web/
 // $ GOOS=js GOARCH=wasm go build -o web/main.wasm cmd/wasm.go
 
+// $ cp /opt/tinygo/targets/wasm_exec.js web/wasm_exec.js
+// $ /opt/tinygo/bin/tinygo build -o web/main.wasm -target wasm -no-debug cmd/wasm.go
 package main
 
 import (
