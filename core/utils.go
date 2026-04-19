@@ -10,6 +10,18 @@ type Index struct {
 	Col uint8
 }
 
+func Response(data any, err error) map[string]any {
+	res := map[string]any{
+		"success": err == nil,
+		"data":    data,
+		"error":   "",
+	}
+	if err != nil {
+		res["error"] = err.Error()
+	}
+	return res
+}
+
 // Range is inclusive of both ends
 func sequence(start, end uint8, shuffle bool) iter.Seq[uint8] {
 	return func(yield func(uint8) bool) {

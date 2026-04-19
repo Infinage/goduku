@@ -7,6 +7,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
+
+	webview "github.com/webview/webview_go"
 )
 
 func main() {
@@ -27,13 +30,13 @@ Commands:
 
 	flag.Parse()
 	if flag.NArg() < 1 {
-		fmt.Println("Starting GUI (No command provided)")
+		startGUI()
 		return
 	}
 
 	switch flag.Arg(0) {
 	case "serve":
-		handleServe(flag.Args()[1:])
+		startWebServer(flag.Args()[1:])
 
 	case "generate":
 		handleGenerate(flag.Args()[1:])
@@ -50,13 +53,67 @@ Commands:
 	}
 }
 
-func handleServe(args []string) {
+// Run as:
+// WEBKIT_DISABLE_COMPOSITING_MODE=1 ./goduku
+func startGUI() {
+	w := webview.New(true)
+	defer w.Destroy()
+	w.SetTitle("Goduku")
+	w.SetSize(480, 320, webview.Hint(webview.HintNone))
+
+	// --- Bindings ---
+	w.Bind("generate", func(string) map[string]any {
+		board, err := core.GenerateSudoku()
+		return core.Response(board.String(false), err)
+	})
+
+	w.Bind("validate", func(csv string) map[string]any {
+		board, err := core.NewSudokuFromString(csv)
+		if err != nil {
+			return core.Response("", err)
+		}
+
+		var results []any
+		errIndices := board.Validate(false)
+		for _, idx := range errIndices {
+			results = append(results, map[string]any{"row": idx.Row, "col": idx.Col})
+		}
+
+		return core.Response(results, nil)
+	})
+
+	w.Bind("solve", func(csv string) map[string]any {
+		board, err := core.NewSudokuFromString(csv)
+		if err != nil {
+			return core.Response("", err)
+		}
+
+		if board.Solve() {
+			return core.Response(board.String(false), nil)
+		} else {
+			return core.Response("", fmt.Errorf("No solution found"))
+		}
+	})
+
+	htmlRaw, err := os.ReadFile("./ui/index.html")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read index.html asset\n")
+		os.Exit(1)
+	}
+
+	var html string = strings.Replace(string(htmlRaw), "const isDesktop = false", "const isDesktop = true", 1)
+	w.SetHtml(html)
+
+	w.Run()
+}
+
+func startWebServer(args []string) {
 	subCmd := flag.NewFlagSet("serve", flag.ExitOnError)
 	port := subCmd.String("p", "8080", "Port to serve on")
 	subCmd.Parse(args)
 
 	// Ensure the web directory exists
-	dir := "./web"
+	dir := "./ui"
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "Error: directory %s not found.\n", dir)
 		os.Exit(1)
