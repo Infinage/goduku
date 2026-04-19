@@ -5,6 +5,11 @@ import (
 	"math/rand/v2"
 )
 
+type Index struct {
+	Row uint8
+	Col uint8
+}
+
 // Range is inclusive of both ends
 func sequence(start, end uint8, shuffle bool) iter.Seq[uint8] {
 	return func(yield func(uint8) bool) {

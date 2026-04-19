@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"goduku/core"
 	"io"
+	"net/http"
 	"os"
 )
 
@@ -32,7 +33,7 @@ Commands:
 
 	switch flag.Arg(0) {
 	case "serve":
-		fmt.Println("Starting the Web UI")
+		handleServe(flag.Args()[1:])
 
 	case "generate":
 		handleGenerate(flag.Args()[1:])
@@ -45,6 +46,28 @@ Commands:
 
 	default:
 		flag.Usage()
+		os.Exit(1)
+	}
+}
+
+func handleServe(args []string) {
+	subCmd := flag.NewFlagSet("serve", flag.ExitOnError)
+	port := subCmd.String("p", "8080", "Port to serve on")
+	subCmd.Parse(args)
+
+	// Ensure the web directory exists
+	dir := "./web"
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Error: directory %s not found.\n", dir)
+		os.Exit(1)
+	}
+
+	http.Handle("/", http.FileServer(http.Dir(dir)))
+	fmt.Printf("Goduku Web UI available at http://localhost:%s\n", *port)
+
+	err := http.ListenAndServe(":"+*port, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Server failed: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -118,7 +141,7 @@ func handleValidate(args []string) {
 	}
 
 	var board = handleSudokuRead(filePath)
-	if !board.Validate(*checkSolved) {
+	if len(board.Validate(*checkSolved)) > 0 {
 		status := "invalid"
 		if *checkSolved {
 			status = "incomplete or invalid"

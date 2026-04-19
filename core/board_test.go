@@ -60,6 +60,11 @@ func TestNewSudokuFromString(t *testing.T) {
 			expectErr: true,
 			input:     "",
 		},
+		{
+			name:      "Valid Flat CSV",
+			expectErr: false,
+			input:     "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1",
+		},
 	}
 
 	for _, tt := range tests {

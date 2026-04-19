@@ -58,21 +58,17 @@ func (board *Sudoku) validate(row, col int) bool {
 }
 
 // Validate that the entire board is 'valid' by checking constraints
-// `checkSolved` can be used to check if the puzzle has been solved
-// If set to false, it skips over zeroed cells
-func (board *Sudoku) Validate(checkSolved bool) bool {
+// Returns a list of cells that are unfilled (and unsolved if `checkSolved` is set)
+func (board *Sudoku) Validate(checkSolved bool) []Index {
+	var errors []Index
 	for row := range 9 {
 		for col := range 9 {
-			if board[row][col] == 0 {
-				if checkSolved {
-					return false
-				}
-				continue
-			}
-			if !board.validate(row, col) {
-				return false
+			if board[row][col] == 0 && checkSolved {
+				errors = append(errors, Index{uint8(row), uint8(col)})
+			} else if board[row][col] != 0 && !board.validate(row, col) {
+				errors = append(errors, Index{uint8(row), uint8(col)})
 			}
 		}
 	}
-	return true
+	return errors
 }

@@ -49,7 +49,7 @@ func backtrack(board *Sudoku, row, col int, ctx *backtrackContext) bool {
 // Returns false if the initial state is invalid or no solution exists.
 // Updates the board in place
 func (board *Sudoku) Solve() bool {
-	if !board.Validate(false) {
+	if len(board.Validate(false)) > 0 {
 		return false
 	}
 

@@ -28,7 +28,7 @@ func TestGenerateSudoku(t *testing.T) {
 			t.Error("Generated puzzle is reported as unsolvable")
 		}
 
-		if !board.Validate(true) {
+		if len(board.Validate(true)) > 0 {
 			t.Error("The solution provided by Solve() is invalid")
 		}
 	})

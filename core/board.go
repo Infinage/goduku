@@ -7,8 +7,9 @@ import (
 
 type Sudoku [9][9]uint8
 
-// Each cell is seperated by a comma char
-// Each row is seperated by a newline char
+// Parses a raw string into a Sudoku board.
+// It supports CSV format with optional newlines
+// It ignores commas and newlines, expecting exactly 81 numeric digits.
 func NewSudokuFromString(raw string) (Sudoku, error) {
 	if raw == "" {
 		return Sudoku{}, fmt.Errorf("Empty input string")
@@ -17,27 +18,28 @@ func NewSudokuFromString(raw string) (Sudoku, error) {
 	var board Sudoku
 	var validBoard bool
 
-	raw = strings.Trim(raw, "\n")
-	for row, line := range strings.Split(raw, "\n") {
-		for col, cell := range strings.Split(line, ",") {
-			if row == 8 && col == 8 {
-				validBoard = true
-			}
+	// Normalize input by removing formatting characters
+	raw = strings.ReplaceAll(raw, "\n", "")
+	raw = strings.ReplaceAll(raw, ",", "")
+	raw = strings.TrimSpace(raw)
 
-			if row >= 9 || col >= 9 {
-				return board, fmt.Errorf("Only 9x9 Sudoku inputs supported")
-			}
+	for idx, cell := range raw {
+		row, col := idx/9, idx%9
 
-			if cell == "" {
-				cell = "0"
-			}
-
-			if len(cell) != 1 || cell[0] < '0' || cell[0] > '9' {
-				return board, fmt.Errorf("Invalid value for cell @ [%v, %v], got: %v", row, col, cell)
-			}
-
-			board[row][col] = uint8(cell[0] - '0')
+		if idx >= 81 {
+			return board, fmt.Errorf("Only 9x9 Sudoku inputs supported")
 		}
+
+		if cell < '0' || cell > '9' {
+			return board, fmt.Errorf("Invalid value for cell @ [%v, %v], got: %v", row, col, cell)
+		}
+
+		board[row][col] = uint8(cell - '0')
+
+		if idx == 80 {
+			validBoard = true
+		}
+
 	}
 
 	if !validBoard {
@@ -47,7 +49,9 @@ func NewSudokuFromString(raw string) (Sudoku, error) {
 	return board, nil
 }
 
-// Return board as a csv string
+// String returns the board as a string.
+// If pretty is true, it returns a human-readable grid with 3x3 block dividers.
+// If pretty is false, it returns a compact CSV format suitable for storage or WASM.
 func (board Sudoku) String(pretty bool) string {
 	var buffer []string
 	for row, line := range board {

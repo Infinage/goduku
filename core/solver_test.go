@@ -69,7 +69,7 @@ func TestSudoku_Solve(t *testing.T) {
 				t.Fatalf("Solve() = %v, want %v", got, tt.isSolve)
 			}
 
-			if tt.isSolve && !board.Validate(true) {
+			if tt.isSolve && len(board.Validate(true)) > 0 {
 				t.Error("Board marked solved but is logically invalid/incomplete")
 			}
 		})
