@@ -1,10 +1,67 @@
 package core
 
+import (
+	"math/rand"
+)
+
 // backtrackContext maintains search state across recursive calls.
 type backtrackContext struct {
+	rows [9]uint16 // Stores bitmask to rows
+	cols [9]uint16 // Stores bitmask to cols
+	grds [9]uint16 // Stores bitmask to grids
+
+	fillOrder [9]uint8 // Order in which backtracker will attempt to fill entries
+
 	shuffle   bool     // Randomizes digit attempt order (useful for generation)
 	exitAfter uint8    // Exits after specified count of solutions are found
 	solutions []Sudoku // Stores full board snapshots of found solutions
+}
+
+func newBtContext(board Sudoku, shuffle bool, exitAfter uint8) backtrackContext {
+	var ctx = backtrackContext{shuffle: shuffle, exitAfter: exitAfter}
+
+	// Initialize the fill order sequence
+	for i := range uint8(9) {
+		ctx.fillOrder[i] = i + 1
+	}
+	if ctx.shuffle {
+		rand.Shuffle(len(ctx.fillOrder), func(i, j int) {
+			ctx.fillOrder[i], ctx.fillOrder[j] = ctx.fillOrder[j], ctx.fillOrder[i]
+		})
+	}
+
+	// Mark the bitmaps
+	for row := range 9 {
+		for col := range 9 {
+			if val := board[row][col]; val != 0 {
+				ctx.mark(row, col, val, true)
+			}
+		}
+	}
+
+	return ctx
+}
+
+func (ctx *backtrackContext) isSafe(row, col int, n uint8) bool {
+	bit := uint16(1 << n)
+	grd := (row/3)*3 + col/3
+	return ctx.rows[row]&bit == 0 && ctx.cols[col]&bit == 0 && ctx.grds[grd]&bit == 0
+}
+
+func (ctx *backtrackContext) mark(row, col int, n uint8, val bool) {
+	bit := uint16(1 << n)
+	grd := (row/3)*3 + (col / 3)
+	if val {
+		// OR
+		ctx.rows[row] |= bit
+		ctx.cols[col] |= bit
+		ctx.grds[grd] |= bit
+	} else {
+		// AND-NOT
+		ctx.rows[row] &^= bit
+		ctx.cols[col] &^= bit
+		ctx.grds[grd] &^= bit
+	}
 }
 
 // `backtrack` performs a depth-first search to fill empty cells.
@@ -28,12 +85,13 @@ func backtrack(board *Sudoku, row, col int, ctx *backtrackContext) bool {
 	}
 
 	var solved bool = false
-	for n := range sequence(1, 9, ctx.shuffle) {
-		(*board)[row][col] = n
-
+	for _, n := range ctx.fillOrder {
 		// Prune branch if digit violates Sudoku constraints
-		if board.validate(row, col) {
+		if ctx.isSafe(row, col, n) {
+			(*board)[row][col] = n
+			ctx.mark(row, col, n, true)
 			solved = backtrack(board, row, col+1, ctx) || solved
+			ctx.mark(row, col, n, false)
 			if solved && len(ctx.solutions) >= int(ctx.exitAfter) {
 				break
 			}
@@ -53,7 +111,7 @@ func (board *Sudoku) Solve() bool {
 		return false
 	}
 
-	var ctx = backtrackContext{exitAfter: 1}
+	var ctx = newBtContext(*board, false, 1)
 	if !backtrack(board, 0, 0, &ctx) {
 		return false
 	}

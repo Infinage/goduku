@@ -80,7 +80,7 @@ func TestBacktrackContext_ExitAfter(t *testing.T) {
 	for _, n := range []uint8{1, 2} {
 		t.Run(string(n+'0')+" Solutions", func(t *testing.T) {
 			var board Sudoku
-			ctx := backtrackContext{exitAfter: n}
+			ctx := newBtContext(board, false, n)
 			backtrack(&board, 0, 0, &ctx)
 			if len(ctx.solutions) != int(n) {
 				t.Errorf("Expected %d solutions, got %d", n, len(ctx.solutions))

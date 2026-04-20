@@ -8,7 +8,7 @@ import (
 // Generate a random sudoku puzzle
 func generateSolvedBoard() Sudoku {
 	var board Sudoku
-	var ctx = backtrackContext{exitAfter: 1, shuffle: true}
+	var ctx = newBtContext(board, true, 1)
 	backtrack(&board, 0, 0, &ctx)
 	board = ctx.solutions[0]
 	return board
@@ -36,12 +36,13 @@ func GenerateSudoku() (Sudoku, error) {
 	for _, idx := range indices {
 		var prev = board[idx.Row][idx.Col]
 		board[idx.Row][idx.Col] = 0
-		var ctx = backtrackContext{shuffle: false, exitAfter: 2}
+		var ctx = newBtContext(board, false, 2)
 		if !backtrack(&board, 0, 0, &ctx) || len(ctx.solutions) == 0 {
 			return board, errors.New("Something went wrong with backtracking logic")
 		}
 
-		if len(ctx.solutions) == 2 {
+		// If solution is not unique, fill the hole back in and try another
+		if len(ctx.solutions) > 1 {
 			board[idx.Row][idx.Col] = prev
 		}
 	}

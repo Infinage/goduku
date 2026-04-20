@@ -37,11 +37,34 @@ func TestGenerateSudoku(t *testing.T) {
 		board, _ := GenerateSudoku()
 
 		// Run backtrack with exitAfter: 2 to verify uniqueness
-		ctx := backtrackContext{exitAfter: 2, shuffle: false}
+		ctx := newBtContext(board, false, 2)
 		backtrack(&board, 0, 0, &ctx)
 
 		if len(ctx.solutions) != 1 {
 			t.Errorf("Generator produced a puzzle with %d solutions; want 1", len(ctx.solutions))
 		}
 	})
+}
+
+// Benchmark the base generator
+// go test goduku/core -bench=.
+func BenchmarkGenerateSolved(b *testing.B) {
+	for b.Loop() {
+		_ = generateSolvedBoard()
+	}
+}
+
+// Benchmark the Validator specifically
+func BenchmarkValidator(b *testing.B) {
+	board := generateSolvedBoard()
+	for b.Loop() {
+		_ = board.validate(4, 4)
+	}
+}
+
+// Benchmark the full generator
+func BenchmarkGenerate(b *testing.B) {
+	for b.Loop() {
+		_, _ = GenerateSudoku()
+	}
 }
