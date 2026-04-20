@@ -2,7 +2,7 @@
 
 A fast, lightweight Sudoku toolkit with CLI, Web (WASM), and Desktop support — all powered by a single Go engine.
 
-🌐 Live: http://goduku.infinage.space
+🌐 Live: https://goduku.infinage.space
 
 ---
 
