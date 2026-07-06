@@ -4,6 +4,7 @@ WORKDIR /var/www
 
 # Copy only the UI assets. 
 COPY ui/index.html .
+COPY ui/index.css .
 COPY ui/main.wasm .
 COPY ui/wasm_exec.js .
 
